@@ -2,6 +2,7 @@
 #include <avr/interrupt.h>
 #include <LCD.h>
 #include <string.h>
+#define Vref 5
 int system_locked = 1;
 unsigned char entered_pass[5];
 unsigned char password[] = "1234";
@@ -12,11 +13,15 @@ void msg_write(unsigned char* msg);
 void add_char_to_string(unsigned char* str, char c);
 int string_length(unsigned char* str); 
 int compare_strings(unsigned char* str1, unsigned char* str2); 
-char Rd;
 int pass_visiable = 1;
 int PressKey = 0;
 char Rd;
 char Td;
+char temp;
+char light;
+char R_ADCL;
+char R_ADCH;
+
 int main() {
 
 	DDRC = 0xFF;
@@ -99,6 +104,26 @@ int main() {
 			SPDR = Td;
 			while (((SPSR >> SPIF) & 1) == 0);
 			Rd = SPDR;		
+			if (Rd == 'T') {
+				SPDR = Td;
+				while (((SPSR >> SPIF) & 1) == 0);
+				R_ADCL = SPDR;		
+				SPDR = Td;
+				while (((SPSR >> SPIF) & 1) == 0);
+				R_ADCH = SPDR;		
+				temp = ((ADCL + (ADCH << 8)) * Vref / 1024) * 100;
+	
+			}
+			else {
+				SPDR = Td;
+				while (((SPSR >> SPIF) & 1) == 0);
+				R_ADCL = SPDR;		
+				SPDR = Td;
+				while (((SPSR >> SPIF) & 1) == 0);
+				R_ADCH = SPDR;		
+				light = ((ADCL + (ADCH << 8)) * Vref / 1024) * 100;
+	
+			}
 		}
 	}
 }
@@ -137,3 +162,8 @@ int compare_strings(unsigned char* str1, unsigned char* str2) {
     }
     return 0; // strings are not equal
 }
+
+// void heater()
+// void cooler()
+// void lighting()
+// void duty_cycle()

@@ -8,11 +8,9 @@ int system_locked = 1;
 #define KEY_PORT    PORTC
 #define KEY_DDR     DDRC
 #define KEY_PIN     PINC
-
 #define C1  4
 #define C2  5
 #define C3  6
-
 int PressKey;
 unsigned char KEY_released(void);
 unsigned char KEY_pressed(void);
@@ -33,24 +31,30 @@ char Rd;
 
 int main() {
 	
-	DDRA = 0x01;
+	// DDRA = 0x01;
 
 
 	// SPI initialization //////////////////////////////////////////////////////////////////////////////
-    	// SPI Type: Master
-    	// SPI Clock Rate: 8MHz / 128 = 62.5 kHz
-    	// SPI Clock Phase: Cycle Half
+    	// SPI Type: Master 			  //////////////////////////////////////////////////////////
+    	// SPI Clock Rate: 8MHz / 128 = 62.5 kHz  //////////////////////////////////////////////////////////
+    	// SPI Clock Phase: Cycle Half		  //////////////////////////////////////////////////////////
     	// SPI Clock Polarity: Low
     	// SPI Data Order: MSB First
 	DDRD = (1<<DDD0);
 	DDRB = (1<<DDB7) | (0<<DDB6) | (1<<DDB5) | (1<<DDB4);
     	PORTB = (1<<PORTB4); // Select slave
-		
 	SPCR = (1<<SPE) | (0<<DORD) | (1<<MSTR) | (0<<CPOL) | (0<<CPHA) | (1<<SPR1) | (1<<SPR0);
 	SPSR = (0<<SPI2X);
-
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// ADC initialization 			  //////////////////////////////////////////////////////////
+	// Using AVCC and prescaling to 8         //////////////////////////////////////////////////////////
+	// ADLAR is default
+	ADMUX = (0<<REFS1) | (1<<REFS0);
+	ADCSRA = (1<<ADEN) | (0<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	
 	DDRD = 0x00; 
 	PORTD = 0x04; 
@@ -85,11 +89,55 @@ int main() {
 				SPDR = Td;
 				while(((SPSR >> SPIF) & 1) == 0);
 				Rd = SPDR;
-				PORTB &= ~(1<<PORTB4);
+				PORTB |= (1<<PORTB4);
 			}
 		}
 		else if (!system_locked) {
-			PORTA = (1 << PORTA0);
+			// PORTA = (1 << PORTA0); 	// Checks if system got unlocked
+			//////////////////////////////////////////////////////////////////////////////////
+			ADMUX = (0<<MUX0); 		// Single ended input ADC0 (temp)	
+			Td = 'T'; 			// Informing slave to be ready for incoming temp	
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
+			ADCSRA |= ((1 << ADSC) | (1 << ADIF)); 	// Start conversion
+			while((ADCSRA & (1 << ADIF)) == 0); 	// Wait till end of the conversion
+			Td = ADCL;
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
+			Td = ADCH;
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
+			///////////////////////////////////////////////////////////////////////////////////
+			ADMUX = (1<<MUX0); 		// Single ended input ADC1 (light)	
+			Td = 'L'; 			// Informing slave to be ready for incoming light	
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
+			ADCSRA |= ((1 << ADSC) | (1 << ADIF)); 	// Start conversion
+			while((ADCSRA & (1 << ADIF)) == 0); 	// Wait till end of the conversion
+			Td = ADCL;
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
+			Td = ADCH;
+			PORTB &= ~(1<<PORTB4);
+			SPDR = Td;
+			while(((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
+			PORTB |= (1<<PORTB4);	
 		}
 
 	}	
