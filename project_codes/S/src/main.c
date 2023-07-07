@@ -23,14 +23,16 @@ int main() {
 	DDRD = 0x07; 	
 
 
-    // SPI initialization
-    // SPI Type: Slave
-    // SPI Clock Rate: 8MHz / 128 = 62.5 kHz
-    // SPI Clock Phase: Cycle Half
-    // SPI Clock Polarity: Low
-    // SPI Data Order: MSB First
-    SPCR = (1<<SPE) | (0<<DORD) | (0<<MSTR) | (0<<CPOL) | (0<<CPHA) | (1<<SPR1) | (1<<SPR0);
-    SPSR = (0<<SPI2X);
+	// SPI initialization
+	// SPI Type: Slave
+	// SPI Clock Rate: 8MHz / 128 = 62.5 kHz
+   	// SPI Clock Phase: Cycle Half
+    	// SPI Clock Polarity: Low
+    	// SPI Data Order: MSB First
+	DDRB = (0<<DDB4) | (0<<DDB5) | (1<<DDB6) | (0<<DDB7);	
+
+    	SPCR = (1<<SPE) | (0<<DORD) | (0<<MSTR) | (0<<CPOL) | (0<<CPHA) | (1<<SPR1) | (1<<SPR0);
+    	SPSR = (0<<SPI2X);
 
 	init_LCD(); 	// Initialize the LCD library
 	LCD_cmd(0x0C); 	// Curser blinking
@@ -39,15 +41,16 @@ int main() {
 	LCD_cmd(0x01);
 	Td = 'L';
 	while(1) {
-		Rd = SPDR;
-		while (((SPSR >> SPIF) & 1) == 0);
-		SPDR = Td;
 		if (system_locked) {
+			SPDR = Td;
+			while (((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;
 			if (Rd == '*') {
 				if (compare_strings(entered_pass, password)) {
 					LCD_cmd(0x01);         // clear the screen	
 					msg_write(msg2);
 					system_locked = 0;
+					Td = 'U';
 				} 
 				else {
 				    	LCD_cmd(0x01);         // clear the screen	
@@ -93,9 +96,9 @@ int main() {
 			}
 		}
 		else {
-			Td = 'U';
 			SPDR = Td;
-			LCD_cmd(0x01);
+			while (((SPSR >> SPIF) & 1) == 0);
+			Rd = SPDR;		
 		}
 	}
 }

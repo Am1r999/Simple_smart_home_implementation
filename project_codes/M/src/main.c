@@ -61,20 +61,24 @@ int main() {
 
 
 	while (1) {
+		if (Rd == 'U') system_locked = 0;
 		if (system_locked) {	
 			KEY_init();
 			Td = KEY_finder();
 			if (Td == '*') {
-				PORTB &= ~(1<<PORTB4);
+				PORTB &= ~(1<<PORTB4); 		// Select Slave
 				SPDR = Td;
 				while(((SPSR >> SPIF) & 1) == 0);
 				Rd = SPDR;
-				PORTB &= ~(1<<PORTB4);
-				SPDR = 'd';
+				PORTB |= (1<<PORTB4); 		// Deselect Slave
+								
+				//////	
+
+				PORTB &= ~(1<<PORTB4); 		// Select Slave
+				SPDR = 'D';
 				while(((SPSR >> SPIF) & 1) == 0);
 				Rd = SPDR;
-				if ( strcmp(Rd, 'U') == 0) system_locked = 0; 
-				PORTB |= (1<<PORTB4);
+				PORTB |= (1<<PORTB4); 		// Deselect Slave
 			}
 			else {
 				PORTB &= ~(1<<PORTB4);
